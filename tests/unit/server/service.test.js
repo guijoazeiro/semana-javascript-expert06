@@ -57,5 +57,45 @@ describe('#Service - test suite for core processing', () => {
 
     expect(result).toStrictEqual(expectedResult)
   })
+  test('#getFileStream', async () => {
+    const currentReadable = TestUtil.generateReadableStream(['abc'])
+    const currentSong = `mySong.mp3`
+    const currentSongFullPath = `${publicDirectory}/${currentSong}`
+
+    const fileInfo = {
+      type: '.mp3',
+      name: currentSongFullPath
+    }
+
+    const service = new Service()
+    jest
+      .spyOn(
+        service,
+        service.getFileInfo.name
+      )
+      .mockResolvedValue(fileInfo)
+
+    jest
+      .spyOn(
+        service,
+        service.createFileStream.name
+      )
+      .mockReturnValue(currentReadable)
+
+    const result = await service.getFileStrem(currentSong)
+    const expectedResult = {
+      type: fileInfo.type,
+      stream: currentReadable
+    }
+    expect(result).toStrictEqual(expectedResult)
+    expect(service.createFileStream).toHaveBeenCalledWith(
+      fileInfo.name
+    )
+
+    expect(service.getFileInfo).toHaveBeenCalledWith(
+      currentSong
+    )
+
+  })
 
 })
