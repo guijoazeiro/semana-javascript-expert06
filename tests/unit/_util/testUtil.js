@@ -1,14 +1,20 @@
-import { jest } from '@jest/globals'
-import { read } from 'fs'
-import { Readable, Writable } from 'stream'
-import { handler } from '../../../server/routes'
+import {
+    jest
+} from '@jest/globals';
+import {
+    Readable,
+    Writable
+} from 'stream';
+
 export default class TestUtil {
-    static generateReadableSStream(data) {
+
+    static generateReadableStream(data) {
         return new Readable({
             read() {
                 for (const item of data) {
                     this.push(item)
                 }
+
                 this.push(null)
             }
         })
@@ -18,15 +24,15 @@ export default class TestUtil {
         return new Writable({
             write(chunk, enc, cb) {
                 onData(chunk)
-                cb(bull, chunk)
+
+                cb(null, chunk)
             }
         })
     }
 
-    static defaultHndleParams() {
-        const requestStream = TestUtil.generateReadableSStream(['body da requisicao'])
+    static defaultHandleParams() {
+        const requestStream = TestUtil.generateReadableStream(['body da requisicao'])
         const response = TestUtil.generateWritableStream(() => { })
-
         const data = {
             request: Object.assign(requestStream, {
                 headers: {},
@@ -38,11 +44,10 @@ export default class TestUtil {
                 end: jest.fn()
             })
         }
-        handler(...data)
-        return{
-            values: () => Object.values(data), 
-            ...data
-        }
 
+        return {
+            values: () => Object.values(data),
+            ...data,
+        }
     }
 }
