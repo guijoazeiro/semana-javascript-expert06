@@ -41,5 +41,21 @@ describe('#Service - test suite for core processing', () => {
     expect(result).toStrictEqual(currentReadable)
     expect(fs.createReadStream).toHaveBeenCalledWith(myFile)
   })  
+  test('#getFileInfo', async () => {
+    jest.spyOn(
+      fsPromises,
+      fsPromises.access.name
+    ).mockResolvedValue()
+
+    const currentSong = 'mySong.mp3'
+    const service = new Service()
+    const result = await service.getFileInfo(currentSong)
+    const expectedResult = {
+      type: '.mp3',
+      name: `${publicDirectory}\\${currentSong}`
+    }
+
+    expect(result).toStrictEqual(expectedResult)
+  })
 
 })
