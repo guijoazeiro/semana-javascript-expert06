@@ -3,23 +3,32 @@ import config from './config.js'
 import { randomUUID } from 'crypto'
 import { join, extname } from 'path'
 import fsPromises from 'fs/promises'
-import { PassThrough } from 'stream'
-import { } from 'throttle'
+import { PassThrough, Writable } from 'stream'
+import Throttle from 'throttle'
 import childProcess from 'child_process'
 import { logger } from './util.js'
+import streamsPromises from 'stream/promises'
+import { once } from 'events'
+
 
 const {
     dir: {
         publicDirectory
     },
     constants: {
-        fallbckBitrate
+        fallbckBitrate,
+        englishConversation,
+        bitRateDivisor
     }
 } = config
 
 export class Service {
     constructor() {
         this.clientStreams = new Map()
+        this.currentSong = englishConversation
+        this.currentBitRate = 0
+        this.throttleTransform = {}
+        this.currentReadable = {}
     }
 
     createClientStream() {
@@ -40,7 +49,7 @@ export class Service {
         return childProcess.spawn('sox', args)
     }
 
-    async getBitRage(song) {
+    async getBitRate(song) {
         try {
             const args = [
                 '--i', //info
@@ -70,6 +79,35 @@ export class Service {
         }
     }
 
+    broadCast() {
+        return new Writable({
+            write: (chunk, enc, cb) => {
+                for (const [id, stream] of this.clientStreams) {
+                    // se o cliente descontou não devemos mais mandar dados pra ele
+                    if (stream.writableEnded) {
+                        this.clientStreams.delete(id)
+                        continue;
+                    }
+
+                    stream.write(chunk)
+                }
+
+                cb()
+            }
+        })
+    }
+
+    async startStreamming() {
+        logger.info(`starting with ${this.currentSong}`)
+        const bitRate = this.currentBitRate = (await this.getBitRate(this.currentSong)) / bitRateDivisor
+        const throttleTransform = this.throttleTransform = new Throttle(bitRate)
+        const songReadable = this.currentReadable = this.createFileStream(this.currentSong)
+        return streamsPromises.pipeline(
+            songReadable,
+            throttleTransform,
+            this.broadCast()
+        )
+    }
     createFileStream(filename) {
         return fs.createReadStream(filename)
     }
