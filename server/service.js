@@ -1,27 +1,37 @@
 import fs from 'fs'
-import config from './config.js'
-import { randomUUID } from 'crypto'
-import { join, extname } from 'path'
 import fsPromises from 'fs/promises'
-import { PassThrough, Writable } from 'stream'
+import {
+    randomUUID
+} from 'crypto'
+import config from './config.js'
+import {
+    PassThrough,
+    Writable
+} from 'stream'
+import {
+    once
+} from 'events'
+import streamsPromises from 'stream/promises'
+
 import Throttle from 'throttle'
 import childProcess from 'child_process'
-import { logger } from './util.js'
-import streamsPromises from 'stream/promises'
-import { once } from 'events'
-
-
+import {
+    logger
+} from './util.js'
+import {
+    join,
+    extname
+} from 'path'
 const {
     dir: {
         publicDirectory
     },
     constants: {
-        fallbckBitrate,
+        fallbackBitRate,
         englishConversation,
         bitRateDivisor
     }
 } = config
-
 export class Service {
     constructor() {
         this.clientStreams = new Map()
@@ -33,33 +43,36 @@ export class Service {
 
     createClientStream() {
         const id = randomUUID()
-        const clientStreams = new PassThrough()
-        this.clientStreams.set(id, clientStreams)
+        const clientStream = new PassThrough()
+        this.clientStreams.set(id, clientStream)
 
         return {
             id,
-            clientStreams
+            clientStream
         }
+
     }
+
     removeClientStream(id) {
         this.clientStreams.delete(id)
     }
 
-    _executeSouxCommand(args) {
+    _executeSoxCommand(args) {
         return childProcess.spawn('sox', args)
     }
 
     async getBitRate(song) {
         try {
             const args = [
-                '--i', //info
-                '--B',//bitrate
+                '--i', // info
+                '-B', // bitrate
                 song
             ]
             const {
-                stderr,
-                stdout,
-                stdin } = this._executeSouxCommand(args)
+                stderr, // tudo que é erro
+                stdout, // tudo que é log
+                // stdin // enviar dados como stream
+            } = this._executeSoxCommand(args)
 
             await Promise.all([
                 once(stderr, 'readable'),
@@ -74,8 +87,9 @@ export class Service {
                 .replace(/k/, '000')
 
         } catch (error) {
-            logger.error(`error no bitrate ${error} `)
-            return fallbckBitrate
+            logger.error(`deu ruim no bitrate: ${error}`)
+
+            return fallbackBitRate
         }
     }
 
@@ -96,7 +110,6 @@ export class Service {
             }
         })
     }
-
     async startStreamming() {
         logger.info(`starting with ${this.currentSong}`)
         const bitRate = this.currentBitRate = (await this.getBitRate(this.currentSong)) / bitRateDivisor
@@ -108,12 +121,19 @@ export class Service {
             this.broadCast()
         )
     }
+
+    stopStreamming() {
+        this.throttleTransform?.end?.()
+    }
+
     createFileStream(filename) {
         return fs.createReadStream(filename)
     }
 
     async getFileInfo(file) {
+        // file = home/index.html
         const fullFilePath = join(publicDirectory, file)
+        // valida se existe, se não existe estoura erro!!
         await fsPromises.access(fullFilePath)
         const fileType = extname(fullFilePath)
         return {
@@ -122,8 +142,11 @@ export class Service {
         }
     }
 
-    async getFileStrem(file) {
-        const { name, type } = await this.getFileInfo(file)
+    async getFileStream(file) {
+        const {
+            name,
+            type
+        } = await this.getFileInfo(file)
         return {
             stream: this.createFileStream(name),
             type
