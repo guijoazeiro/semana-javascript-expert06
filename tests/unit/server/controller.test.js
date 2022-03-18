@@ -29,7 +29,7 @@ describe('#Controller - test suite for controller calls', () => {
 
         jest.spyOn(
             Service.prototype,
-            Service.prototype.getFileStrem.name,
+            Service.prototype.getFileStream.name,
         ).mockResolvedValue({
             stream: mockStream,
             type: mockType
