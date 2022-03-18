@@ -14,6 +14,20 @@ services:
       - node_modules:/spotify-radio/node_modules
     ports:
       - 3000:3000
+  test-e2e:
+    image: spotify-radio
+    build: .
+    environment:
+      PORT: 3000
+    command: 
+      - npm
+      - run
+      - test:e2e
+    volumes:
+      - .:/spotify-radio
+      - node_modules:/spotify-radio/node_modules
+    ports:
+      - 3000:3000
 
   test:
     image: spotify-radio
