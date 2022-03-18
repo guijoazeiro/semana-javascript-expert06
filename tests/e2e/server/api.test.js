@@ -81,7 +81,28 @@ import {
         server.kill()
         expect(onChunk).not.toHaveBeenCalled()
       })
-      
+      test('it should receive data stream if the process is playing', async () => {
+        const server = await getTestServer()
+        const onChunk = jest.fn()
+        const {
+          send
+        } = commandSender(server.testServer)
+        pipeAndReadStreamData(
+          server.testServer.get('/stream'),
+          onChunk
+        )
+  
+        await send(possibleCommands.start)
+        await setTimeout(RETENTION_DATA_PERIOD)
+        await send(possibleCommands.stop)
+        const [
+          [buffer]
+        ] = onChunk.mock.calls
+        expect(buffer).toBeInstanceOf(Buffer)
+        expect(buffer.length).toBeGreaterThan(1000)
+  
+        server.kill()
+      })
   
     })
   })
