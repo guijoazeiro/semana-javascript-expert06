@@ -35,11 +35,7 @@ async function routes(request, response) {
     const {
       stream
     } = await controller.getFileStream(homeHTML)
-
-    // padrão do response é text/html
-    // response.writeHead(200, {
-    //   'Content-Type': 'text/html'
-    // })
+    
 
     return stream.pipe(response)
   }
@@ -49,11 +45,7 @@ async function routes(request, response) {
       stream
     } = await controller.getFileStream(controllerHTML)
 
-    // padrão do response é text/html
-    // response.writeHead(200, {
-    //   'Content-Type': 'text/html'
-    // })
-
+   
     return stream.pipe(response)
   }
 
@@ -65,7 +57,8 @@ async function routes(request, response) {
     request.once("close", onClose)
     response.writeHead(200, {
       'Content-Type': 'audio/mpeg',
-      'Accept-Rages': 'bytes'
+      
+      'Accept-Ranges': 'bytes'
     })
 
     return stream.pipe(response)
@@ -73,13 +66,12 @@ async function routes(request, response) {
 
   if(method === 'POST' && url === '/controller') {
     const data = await once(request, 'data')
-    logger.info(data)
-    const item = JSON.parse(data)       
-    const result = await controller.handleCommand(item)       
+    const item = JSON.parse(data)
+    const result = await controller.handleCommand(item)
     return response.end(JSON.stringify(result))
   }
 
-  //files
+ 
   if (method === 'GET') {
     const {
       stream,
