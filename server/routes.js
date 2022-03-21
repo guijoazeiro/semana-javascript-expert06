@@ -35,7 +35,6 @@ async function routes(request, response) {
     const {
       stream
     } = await controller.getFileStream(homeHTML)
-    
 
     return stream.pipe(response)
   }
@@ -44,8 +43,6 @@ async function routes(request, response) {
     const {
       stream
     } = await controller.getFileStream(controllerHTML)
-
-   
     return stream.pipe(response)
   }
 
@@ -55,23 +52,23 @@ async function routes(request, response) {
       onClose
     } = controller.createClientStream()
     request.once("close", onClose)
+
     response.writeHead(200, {
       'Content-Type': 'audio/mpeg',
-      
       'Accept-Ranges': 'bytes'
     })
 
     return stream.pipe(response)
   }
 
-  if(method === 'POST' && url === '/controller') {
+  if (method === 'POST' && url === '/controller') {
     const data = await once(request, 'data')
     const item = JSON.parse(data)
     const result = await controller.handleCommand(item)
     return response.end(JSON.stringify(result))
   }
 
- 
+  //files
   if (method === 'GET') {
     const {
       stream,
